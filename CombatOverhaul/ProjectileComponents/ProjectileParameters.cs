@@ -87,33 +87,36 @@ namespace CombatOverhaul.ProjectileComponents
 
                 if (canPenetrate)
                 {
-                    /* disable cell cheking
-                    int numCells = block.filledCells.Length;
-                    float cellHealth = damageable.Health / numCells;
-
-                    int cellsToPenetrate = 0;
-                    if (damageToDeal < cellHealth) {
-                        // if can't even penetrate one, then don't bother
-                        cellsToPenetrate = 1;
-                    }
-                    else
+                    float maxDamageToDeal = damageable.Health;
+                    if (block.GetComponent<DummyTarget>() == null)
                     {
-                        int expectedCellsToPenetrate = Mathf.CeilToInt(damageToDeal / cellHealth);
+                        int numCells = block.filledCells.Length;
+                        float cellHealth = damageable.Health / numCells;
 
-                        // brute force check cells
-                        // TODO: optimize this
-                        foreach (IntVector3 cell in block.filledCells)
+                        int cellsToPenetrate = 0;
+                        if (damageToDeal < cellHealth)
                         {
-                            if (IntersectsCell(rbody.position, rbody.velocity, cell))
+                            // if can't even penetrate one, then don't bother
+                            cellsToPenetrate = 1;
+                        }
+                        else
+                        {
+                            int expectedCellsToPenetrate = Mathf.CeilToInt(damageToDeal / cellHealth);
+
+                            // brute force check cells
+                            // TODO: optimize this
+                            foreach (IntVector3 cell in block.filledCells)
                             {
-                                cellsToPenetrate++;
+                                if (IntersectsCell(rbody.position, rbody.velocity, cell))
+                                {
+                                    cellsToPenetrate++;
+                                }
                             }
                         }
+                        maxDamageToDeal = cellHealth * Math.Max(1, cellsToPenetrate);
+                        logger.Trace($"Trying to penetrate {cellsToPenetrate} cells, for corresponding HP of {maxDamageToDeal}");
                     }
-                    */
 
-                    // float maxDamageToDeal = cellHealth * Math.Max(1, cellsToPenetrate);
-                    float maxDamageToDeal = damageable.Health;
                     if (damageToDeal < maxDamageToDeal)
                     {
                         this.remainingDamage = 0;
@@ -146,7 +149,10 @@ namespace CombatOverhaul.ProjectileComponents
             }
 
             logger.Trace($"Stage 4a - Just dealt {damageToDeal} damage to damageable {damageable.name} (HP: {origDamageableHealth}), original shell had damage {originalDamage}");
-
+            if (!penetrated)
+            {
+                this.remainingDamage = 0;
+            }
             return penetrated;
         }
 

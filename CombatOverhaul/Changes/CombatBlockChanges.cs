@@ -4,9 +4,11 @@ using CombatOverhaul.ProjectileComponents;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
+using HarmonyLib;
 
 namespace CombatOverhaul.Changes
 {
@@ -83,19 +85,62 @@ namespace CombatOverhaul.Changes
             return block.blockPrefab.GetComponent<FireData>().m_BulletPrefab.transform;
         }
 
-        private static void PatchProjectile(BlockMetadata block, Transform projectile)
+        private static readonly FieldInfo m_Explosion = AccessTools.Field(typeof(Projectile), "m_Explosion");
+        private static readonly FieldInfo m_DamageType = AccessTools.Field(typeof(WeaponRound), "m_DamageType");
+        private static void PatchProjectileAddParams(BlockMetadata block, Transform projectilePrefab)
         {
-            if (projectile != null)
+            if (projectilePrefab != null)
             {
-                ProjectileParameters projParams = projectile.gameObject.GetComponent<ProjectileParameters>();
+                ProjectileParameters projParams = projectilePrefab.gameObject.GetComponent<ProjectileParameters>();
                 if (projParams == null)
                 {
-                    projParams = projectile.gameObject.AddComponent<ProjectileParameters>();
+                    projParams = projectilePrefab.gameObject.AddComponent<ProjectileParameters>();
                     // Console.WriteLine($"ADDED PROJECTILE PARAMETERS TO {blockData.BlockID}");
                     projParams.CalculateParameters(block.blockPrefab.GetComponent<TankBlock>());
                 }
             }
         }
+
+        private static void PatchProjectileAddPiercing(BlockMetadata block, Transform projectilePrefab)
+        {
+            if (projectilePrefab != null)
+            {
+                Projectile projectile = projectilePrefab.GetComponent<Projectile>();
+                m_DamageType.SetValue(projectile, ManDamage.DamageType.Ballistic);
+            }
+        }
+
+        private static readonly BlockTypes[] VanillaBlocksEnablePiercing = new BlockTypes[]
+        {
+            BlockTypes.GSOBigBertha_845,
+            BlockTypes.GSOMegatonLong_242,
+            BlockTypes.HE_CannonBattleship_216,
+            BlockTypes.HE_Cannon_Naval_826,
+            // BlockTypes.HE_Cannon_Naval_AC_NPC_826,
+            BlockTypes.HE_CannonTurret_Short_525,
+            // BlockTypes.HE_CannonTurret_327,
+        };
+
+        private static readonly string[] ModdedBlocksEnablePiercing = new string[]
+        {
+            "RabisBlocks:GSO_LongBertha",
+            "RabisBlocks:HE_ShredderCannonSingle",
+            "RabisBlocks:HE_HeavyMG",
+            "Black Labs:HE_Muspell_Railgun",
+            "Black Labs:HE_Mjolnir_Railgun",
+            "Black Labs:HE_Gungnir_Railgun",
+            "Black Labs:HE_Jormungand_Railgun",
+            "Black Labs:HE_Blutgang_Howitzer",
+            "Black Labs:HE_cannon_naglfaar2",
+            "Black Labs:HE_Nidhogg_Railcannon",
+            "Black Labs:HE_Ragnarok_Railcannon_Battery",
+            "HE Plus Additional Block Pack:HE+_DualCannon",
+            "HE Plus Additional Block Pack:HE+_FortCannon",
+            "HE Plus Additional Block Pack:HE+_Fixed_Gatring",
+            "Naval Guns:HE_Triple_Barrel_Large_FX_Update",
+            "Air Guns:Phalanx_Broadside",
+            "Air Guns:HE_Broadside"
+        };
 
         private static void PatchShield(BlockMetadata blockData)
         {
@@ -122,12 +167,50 @@ namespace CombatOverhaul.Changes
                     new AncillaryChange
                     {
                         id = "ProjectileParams",
-                        AncillaryPatcher = new Action<BlockMetadata, Transform>(PatchProjectile),
+                        AncillaryPatcher = new Action<BlockMetadata, Transform>(PatchProjectileAddParams),
                         GetAncillaryPrefab = new Func<BlockMetadata, Transform>(GetProjectilePrefab),
                         UpdateAncillaryPrefab = new Action<BlockMetadata, Transform>(ReplaceProjectilePrefab)
                     }
                 }
             });
+            foreach (BlockTypes vanillaBlock in VanillaBlocksEnablePiercing)
+            {
+                changes.Add(new Change
+                {
+                    id = $"CombatOverhaul_Piercing_{vanillaBlock}",
+                    targetType = ChangeTargetType.VANILLA_ID,
+                    condition = new VanillaIDConditional(vanillaBlock),
+                    targetsAncillaryPrefabs = true,
+                    ancillaryChanges = new List<AncillaryChange>() {
+                    new AncillaryChange
+                    {
+                        id = "ProjectileDamageType",
+                        AncillaryPatcher = new Action<BlockMetadata, Transform>(PatchProjectileAddPiercing),
+                        GetAncillaryPrefab = new Func<BlockMetadata, Transform>(GetProjectilePrefab),
+                        UpdateAncillaryPrefab = new Action<BlockMetadata, Transform>(ReplaceProjectilePrefab)
+                    }
+                }
+                });
+            }
+            foreach (string blockID in ModdedBlocksEnablePiercing)
+            {
+                changes.Add(new Change
+                {
+                    id = $"CombatOverhaul_Piercing_{blockID}",
+                    targetType = ChangeTargetType.BLOCK_ID,
+                    condition = new BlockIDConditional(blockID),
+                    targetsAncillaryPrefabs = true,
+                    ancillaryChanges = new List<AncillaryChange>() {
+                    new AncillaryChange
+                    {
+                        id = "ProjectileDamageType",
+                        AncillaryPatcher = new Action<BlockMetadata, Transform>(PatchProjectileAddPiercing),
+                        GetAncillaryPrefab = new Func<BlockMetadata, Transform>(GetProjectilePrefab),
+                        UpdateAncillaryPrefab = new Action<BlockMetadata, Transform>(ReplaceProjectilePrefab)
+                    }
+                }
+                });
+            }
         }
 
         internal static void RegisterChanges()
