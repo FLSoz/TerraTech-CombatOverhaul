@@ -17,6 +17,35 @@ namespace CombatOverhaul
             OFF = 6
         }
 
+        internal bool LogTrace()
+        {
+            return this.minLoggingLevel <= (byte)LogLevel.TRACE;
+        }
+        internal bool LogDebug()
+        {
+            return this.minLoggingLevel <= (byte)LogLevel.DEBUG;
+        }
+        internal bool LogInfo()
+        {
+            return this.minLoggingLevel <= (byte)LogLevel.INFO;
+        }
+        internal bool LogWarn()
+        {
+            return this.minLoggingLevel <= (byte)LogLevel.WARN;
+        }
+        internal bool LogError()
+        {
+            return this.minLoggingLevel <= (byte)LogLevel.ERROR;
+        }
+        internal bool LogFatal()
+        {
+            return this.minLoggingLevel <= (byte)LogLevel.FATAL;
+        }
+        internal bool LogOff()
+        {
+            return this.minLoggingLevel <= (byte)LogLevel.OFF;
+        }
+
         internal struct TargetConfig
         {
             public string filename;
