@@ -238,10 +238,15 @@ namespace CombatOverhaul.BlockModules
                 material.renderQueue = 2;
             }
 
-            this.impactCooldown = this.cooldownBeforeRegen;
+            this.SetCooldown(this.minCooldown);
         }
 
-        private float cooldownBeforeRegen = 0.2f;
+        public void SetCooldown(float newCooldown)
+        {
+            this.impactCooldown = Mathf.Max(this.impactCooldown, newCooldown);
+        }
+
+        private float minCooldown = 0.2f;
         private float impactCooldown = 0.0f;
     }
 
@@ -250,6 +255,7 @@ namespace CombatOverhaul.BlockModules
     internal static class PatchShieldState
     {
         private static readonly FieldInfo m_State = AccessTools.Field(typeof(ModuleShieldGenerator), "m_State");
+        private static readonly FieldInfo m_PowerUpTimer = AccessTools.Field(typeof(ModuleShieldGenerator), "m_PowerUpTimer");
 
         internal static void Prefix(ModuleShieldGenerator __instance, out bool __state)
         {
@@ -288,6 +294,9 @@ namespace CombatOverhaul.BlockModules
             if (__instance.m_Repulsion && __instance.m_ScriptDisabled != __state)
             {
                 __instance.m_ScriptDisabled = __state;
+                // add power down time to shield cycle time so it stays down a bit longer
+                float currentDelay = (float)m_PowerUpTimer.GetValue(__instance);
+                m_PowerUpTimer.SetValue(__instance, currentDelay + __instance.m_InterpTimeOff);
             }
             ModuleShieldParameters shieldParams = __instance.GetComponent<ModuleShieldParameters>();
             if (shieldParams != null)

@@ -144,8 +144,12 @@ namespace CombatOverhaul.Changes
 
         private static void PatchShield(BlockMetadata blockData)
         {
-            blockData.blockPrefab.gameObject.AddComponent<ModuleShieldParameters>();
-            // Console.WriteLine($"ADDED SHIELD PARAMETERS TO {blockData.BlockID}");
+            ModuleShieldParameters shieldParams = blockData.blockPrefab.GetComponent<ModuleShieldParameters>();
+            if (shieldParams == null)
+            {
+                blockData.blockPrefab.gameObject.AddComponent<ModuleShieldParameters>();
+                // Console.WriteLine($"ADDED SHIELD PARAMETERS TO {blockData.BlockID}");
+            }
         }
 
         internal static void SetupChanges()

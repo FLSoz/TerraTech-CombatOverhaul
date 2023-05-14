@@ -8,6 +8,7 @@ using UnityEngine;
 using HarmonyLib;
 using static CompoundExpression;
 using static System.Net.Mime.MediaTypeNames;
+using CombatOverhaul.BlockModules;
 
 namespace CombatOverhaul.ProjectileComponents
 {
@@ -21,13 +22,10 @@ namespace CombatOverhaul.ProjectileComponents
             logger.Info("Logger is setup");
         }
 
-        public float krupp;
-        public float mass;
-        public float caliber;
+        public float shieldDisruption = -1f;
+        public float armorPierce = -1f;
 
-        public int remainingDamage;
-        public float armorPierce = 0.5f;
-        public float speed = 100.0f;
+        internal int remainingDamage;
         public FactionSubTypes ProjectileCorp = FactionSubTypes.NULL;
 
         private Projectile m_MyProjectile;
@@ -68,6 +66,16 @@ namespace CombatOverhaul.ProjectileComponents
             float originalDamage = this.remainingDamage;
 
             TankBlock block = damageable.Block;
+            if (damageable.DamageableType == ManDamage.DamageableType.Shield && block != null && damageable != block.visible.damageable)
+            {
+                // we hit a shield
+                ModuleShieldParameters shieldParams = block.GetComponent<ModuleShieldParameters>();
+                if (shieldParams != default)
+                {
+                    shieldParams.SetCooldown(this.shieldDisruption);
+                }
+            }
+
             float origDamageableHealth = damageable.Health;
             ManDamage.DamageType damageType = this.m_MyProjectile.DamageType;
             bool canPenetrate = damageType == ManDamage.DamageType.Impact ||
@@ -482,7 +490,6 @@ namespace CombatOverhaul.ProjectileComponents
             ProjectileParameters projParams = __instance.GetComponent<ProjectileParameters>();
             if (projParams != null)
             {
-                projParams.speed = __instance.rbody.velocity.magnitude;
                 TankBlock firingBlock = weapon.block;
                 projParams.ProjectileCorp = Singleton.Manager<ManSpawn>.inst.GetCorporation(firingBlock.BlockType);
             }

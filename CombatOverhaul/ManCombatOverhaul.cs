@@ -13,6 +13,7 @@ namespace CombatOverhaul
         private Dictionary<FactionSubTypes, float> corpArmorReduction = new Dictionary<FactionSubTypes, float>();
         private Dictionary<FactionSubTypes, float> corpPiercingCoefficient = new Dictionary<FactionSubTypes, float>();
         private Dictionary<FactionSubTypes, float> corpShieldCoefficient = new Dictionary<FactionSubTypes, float>();
+        private Dictionary<FactionSubTypes, float> shieldDisruptionCoefficient = new Dictionary<FactionSubTypes, float>();
 
         public void EarlyInit()
         {
@@ -41,6 +42,13 @@ namespace CombatOverhaul
             this.corpShieldCoefficient.Add(FactionSubTypes.BF, 1.0f);
             this.corpShieldCoefficient.Add(FactionSubTypes.EXP, 2.0f);
             this.corpShieldCoefficient.Add(FactionSubTypes.HE, 1.5f);
+
+            this.shieldDisruptionCoefficient.Add(FactionSubTypes.GSO, 0.2f);
+            this.shieldDisruptionCoefficient.Add(FactionSubTypes.VEN, 0.225f);
+            this.shieldDisruptionCoefficient.Add(FactionSubTypes.GC, 0.2f);
+            this.shieldDisruptionCoefficient.Add(FactionSubTypes.BF, 0.25f);
+            this.shieldDisruptionCoefficient.Add(FactionSubTypes.EXP, 0.5f);
+            this.shieldDisruptionCoefficient.Add(FactionSubTypes.HE, 0.33f);
         }
 
         public void DeInit()
@@ -64,6 +72,15 @@ namespace CombatOverhaul
         internal float GetShieldCoefficient(ModuleShieldParameters shield)
         {
             return this.corpShieldCoefficient.GetOrDefault(shield.ShieldCorp, 1.0f);
+        }
+
+        internal float GetShieldDisruption(ProjectileParameters projectile)
+        {
+            if (projectile.shieldDisruption > 0.0f)
+            {
+                return projectile.shieldDisruption;
+            }
+            return this.shieldDisruptionCoefficient.GetOrDefault(projectile.ProjectileCorp, 0.2f);
         }
     }
 }
