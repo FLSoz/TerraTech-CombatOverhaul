@@ -1,12 +1,7 @@
-﻿using CombatOverhaul.Datastructures;
-using HarmonyLib;
-using Mono.Cecil;
+﻿using HarmonyLib;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 using UnityEngine;
 
 namespace CombatOverhaul.Explosions
@@ -382,6 +377,7 @@ namespace CombatOverhaul.Explosions
                     }
                     // only add impulse to direct impact
                     else
+                    {
                         Vector3 direction = directHit.transform.position - explosion.transform.position;
                         if (DirectHitVisible.type == ObjectTypes.Block && DirectHitVisible.block.tank)
                         {
