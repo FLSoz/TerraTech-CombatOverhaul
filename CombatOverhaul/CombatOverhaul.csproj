@@ -76,6 +76,7 @@
     <Compile Include="BlockModules\ModuleShieldParameters.cs" />
     <Compile Include="Changes\CombatBlockChanges.cs" />
     <Compile Include="CombatOverhaulMod.cs" />
+    <Compile Include="Explosions\ExplosionParameters.cs" />
     <Compile Include="Extensions.cs" />
     <Compile Include="Logger.cs" />
     <Compile Include="ManCombatOverhaul.cs" />
