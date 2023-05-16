@@ -173,13 +173,13 @@ namespace CombatOverhaul.ProjectileComponents
         private Collider[] myColliders;
 
         private List<Collider> penetrated = new List<Collider>();
-        public void Penetrate(Collider collider, Vector3 originalVelocity)
+        public void Penetrate(Collider collider, Vector3 newVelocity)
         {
             this.penetrated.Add(collider);
             foreach (Collider myCollider in myColliders) {
                 Physics.IgnoreCollision(collider, myCollider, true);
             }
-            rbody.velocity = originalVelocity;
+            rbody.velocity = newVelocity;
         }
         public void ResetPenetration()
         {
@@ -428,11 +428,13 @@ namespace CombatOverhaul.ProjectileComponents
                 Damageable damageable = contactPoint.otherCollider.GetComponentInParents<Damageable>(true);
                 string targetName = targetRigidbody ? targetRigidbody.name : (damageable ? damageable.name : "UNKNOWN");
                 ProjectileParameters.logger.Debug($"Handle collision for {__instance.name} vs {targetName}");
+                float preHitDmg = projParams.remainingDamage;
                 if (PatchProjectile.HandleCollisionAndCheckPenetration(__instance, projParams, damageable, contactPoint.point, collision.collider, false))
                 {
                     // we penetrated - ignore collisions so we can move onto next block
                     Vector3 originalVelocity = targetVelocity - relativeVelocity;
-                    projParams.Penetrate(contactPoint.otherCollider, originalVelocity);
+                    Vector3 newVelocity = originalVelocity * projParams.remainingDamage / preHitDmg;
+                    projParams.Penetrate(contactPoint.otherCollider, newVelocity);
                 }
             }
             catch (Exception e)
