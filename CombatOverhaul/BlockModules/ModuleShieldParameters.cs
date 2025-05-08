@@ -184,6 +184,8 @@ namespace CombatOverhaul.BlockModules
                     this.CalculateNewShieldParams();
                 }
                 this.SetShieldHealth(this.MaxShieldHealth);
+
+                this.GeneratorModule.m_EnergyConsumedPerDamagePoint /= 2;
             }
         }
 
@@ -257,9 +259,18 @@ namespace CombatOverhaul.BlockModules
         private static readonly FieldInfo m_State = AccessTools.Field(typeof(ModuleShieldGenerator), "m_State");
         private static readonly FieldInfo m_PowerUpTimer = AccessTools.Field(typeof(ModuleShieldGenerator), "m_PowerUpTimer");
 
-        internal static void Prefix(ModuleShieldGenerator __instance, out bool __state)
+        internal struct ShieldState
         {
-            __state = __instance.m_ScriptDisabled;
+            public bool scriptDisabled;
+            public bool isPowered;
+        }
+
+        internal static void Prefix(ModuleShieldGenerator __instance, out ShieldState __state)
+        {
+            __state = new ShieldState {
+                scriptDisabled = __instance.m_ScriptDisabled,
+                isPowered = __instance.IsPowered
+            };
             // is a shield
             if (__instance.m_Repulsion && !__instance.m_ScriptDisabled)
             {
@@ -267,16 +278,14 @@ namespace CombatOverhaul.BlockModules
                 if (shieldParams != null)
                 {
                     // we double energy consumption
-                    __instance.m_EnergyConsumptionPerSec = __instance.m_EnergyConsumptionPerSec * 2;
+                    // __instance.m_EnergyConsumptionPerSec = __instance.m_EnergyConsumptionPerSec * 2;
 
                     ModuleShieldParameters.logger.Trace($"Updating shield {__instance.name} ({__instance.gameObject.GetInstanceID()})");
                     if (shieldParams.Damageable.Health <= 0.0f)
                     {
                         ModuleShieldParameters.logger.Trace("  Shield has lost all health - disable for recharge");
                         // reset health to max, pop shield
-                        shieldParams.Damageable.InitHealth(shieldParams.Damageable.MaxHealth);
                         shieldParams.Bubble.SetTargetScale(0.0f);
-
                         __instance.m_ScriptDisabled = true;
                     }
                     else
@@ -288,12 +297,12 @@ namespace CombatOverhaul.BlockModules
             }
         }
 
-        internal static void Postfix(ModuleShieldGenerator __instance, bool __state)
+        internal static void Postfix(ModuleShieldGenerator __instance, ShieldState __state)
         {
             // we forcibly flipped the shield state to pop the shield
-            if (__instance.m_Repulsion && __instance.m_ScriptDisabled != __state)
+            if (__instance.m_Repulsion && __instance.m_ScriptDisabled != __state.scriptDisabled)
             {
-                __instance.m_ScriptDisabled = __state;
+                __instance.m_ScriptDisabled = __state.scriptDisabled;
                 // add power down time to shield cycle time so it stays down a bit longer
                 float currentDelay = (float)m_PowerUpTimer.GetValue(__instance);
                 m_PowerUpTimer.SetValue(__instance, currentDelay + __instance.m_InterpTimeOff);
@@ -301,7 +310,13 @@ namespace CombatOverhaul.BlockModules
             ModuleShieldParameters shieldParams = __instance.GetComponent<ModuleShieldParameters>();
             if (shieldParams != null)
             {
-                __instance.m_EnergyConsumptionPerSec = __instance.m_EnergyConsumptionPerSec / 2;
+                // __instance.m_EnergyConsumptionPerSec = __instance.m_EnergyConsumptionPerSec / 2;
+
+                // shield went from charging to powered
+                if (__instance.m_Repulsion && __state.isPowered != __instance.IsPowered)
+                {
+                    shieldParams.Damageable.InitHealth(shieldParams.Damageable.MaxHealth);
+                }
             }
         }
     }
@@ -346,6 +361,8 @@ namespace CombatOverhaul.BlockModules
     [HarmonyPatch(typeof(ModuleShieldGenerator), "OnRejectShieldDamage")]
     internal static class PatchShieldDamage
     {
+        private static readonly FieldInfo m_EnergyDeficit = AccessTools.Field(typeof(ModuleShieldGenerator), "m_EnergyDeficit");
+        private static readonly MethodInfo OnServerSetEnergyDeficit = AccessTools.Method(typeof(ModuleShieldGenerator), "OnServerSetEnergyDeficit");
         internal static readonly FieldInfo m_Shield = AccessTools.Field(typeof(ModuleShieldGenerator), "m_Shield");
         internal static bool Prefix(ModuleShieldGenerator __instance, ManDamage.DamageInfo info, bool actuallyDealDamage, ref bool __result)
         {
@@ -357,6 +374,9 @@ namespace CombatOverhaul.BlockModules
                 {
                     __result = false;
                     shieldParams.RegisterImpact(info);
+                    // drain energy at reduced rate
+                    float currDeficit = (float)m_EnergyDeficit.GetValue(__instance);
+                    OnServerSetEnergyDeficit.Invoke(__instance, new object[] { currDeficit + (__instance.m_EnergyConsumedPerDamagePoint * info.Damage) });
                 }
                 return false;
             }

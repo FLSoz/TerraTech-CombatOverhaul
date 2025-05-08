@@ -137,6 +137,7 @@ namespace CombatOverhaul.Changes
             "HE Plus Additional Block Pack:HE+_DualCannon",
             "HE Plus Additional Block Pack:HE+_FortCannon",
             "HE Plus Additional Block Pack:HE+_Fixed_Gatring",
+            "HE Plus Additional Block Pack:HE+_Figter_gun",
             "Naval Guns:HE_Triple_Barrel_Large_FX_Update",
             "Air Guns:Phalanx_Broadside",
             "Air Guns:HE_Broadside"

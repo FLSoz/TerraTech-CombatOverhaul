@@ -13,9 +13,9 @@ namespace CombatOverhaul.Patches
         [HarmonyPostfix]
         internal static void Postfix(ref ModuleShieldGenerator __instance)
         {
-            if (__instance.m_Healing)
+            if (__instance.m_Healing && !__instance.m_Repulsion)
             {
-                // No energy consumption allowed
+                // No energy consumption allowed, but only for pure repair bubbles
                 __instance.m_EnergyConsumptionPerSec = 0;
             }
         }

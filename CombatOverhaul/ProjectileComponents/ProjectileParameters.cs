@@ -433,7 +433,7 @@ namespace CombatOverhaul.ProjectileComponents
                 {
                     // we penetrated - ignore collisions so we can move onto next block
                     Vector3 originalVelocity = targetVelocity - relativeVelocity;
-                    Vector3 newVelocity = originalVelocity * projParams.remainingDamage / preHitDmg;
+                    Vector3 newVelocity = originalVelocity * Mathf.Clamp(projParams.remainingDamage / preHitDmg, 0, 1);
                     projParams.Penetrate(contactPoint.otherCollider, newVelocity);
                 }
             }

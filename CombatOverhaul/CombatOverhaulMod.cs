@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using BlockChangePatcher;
 using CombatOverhaul.Changes;
 using UnityEngine;
+using CombatOverhaul.Explosions;
 
 namespace CombatOverhaul
 {
@@ -28,6 +29,7 @@ namespace CombatOverhaul
                 path = "Combat_Overhaul"
             };
             logger = new Logger("CombatOverhaulMod", target);
+            ExplosionParameters.logger = new Logger("ExplosionNerf", target);
             logger.Info("Logger is setup");
         }
 
